@@ -1,0 +1,521 @@
+{
+  "id": "glycolysis",
+  "name": "Glycolysis",
+  "subtitle": "Glucose → 2 Pyruvate · net +2 ATP, +2 NADH",
+  "compartment": "Cytosol",
+  "source": {
+    "pathway": "Reactome R-HSA-70171",
+    "license": "CC BY 4.0"
+  },
+  "builtAt": "2026-08-02T16:35:13.004Z",
+  "metabolites": [
+    {
+      "id": "glucose",
+      "name": "Glucose",
+      "abbr": "Glucose",
+      "carbons": 6,
+      "smiles": "C(C1C(C(C(C(O1)O)O)O)O)O",
+      "smilesSource": "PubChem",
+      "explanation": "Glucose is a molecule that contains six carbon atoms. It is an intermediate in the process of glycolysis, which is a metabolic pathway.",
+      "pos": {
+        "x": 300,
+        "y": 90
+      }
+    },
+    {
+      "id": "g6p",
+      "name": "Glucose 6-phosphate",
+      "abbr": "G6P",
+      "carbons": 6,
+      "smiles": "C(C(C(C(C(C=O)O)O)O)O)OP(=O)(O)O",
+      "smilesSource": "PubChem",
+      "explanation": "Glucose 6-phosphate is a molecule with six carbon atoms that plays a role in glycolysis. It is an intermediate, meaning it is formed at one stage of glycolysis and then converted into another molecule at a later stage.",
+      "pos": {
+        "x": 300,
+        "y": 220
+      }
+    },
+    {
+      "id": "f6p",
+      "name": "Fructose 6-phosphate",
+      "abbr": "F6P",
+      "carbons": 6,
+      "smiles": "C(C(C(C(C(=O)CO)O)O)O)OP(=O)(O)O",
+      "smilesSource": "PubChem",
+      "explanation": "Fructose 6-phosphate is a molecule that has six carbon atoms and is involved in the process of glycolysis. It acts as an intermediate, meaning it is formed and then converted into another molecule during glycolysis.",
+      "pos": {
+        "x": 300,
+        "y": 350
+      }
+    },
+    {
+      "id": "fbp",
+      "name": "Fructose 1,6-bisphosphate",
+      "abbr": "F1,6BP",
+      "carbons": 6,
+      "smiles": "C(C1C(C(C(O1)(COP(=O)(O)O)O)O)O)OP(=O)(O)O",
+      "smilesSource": "PubChem",
+      "explanation": "Fructose 1,6-bisphosphate is a molecule with six carbon atoms. It is an intermediate in the glycolysis process, meaning it is formed and then used as a step in the breakdown of glucose.",
+      "pos": {
+        "x": 300,
+        "y": 480
+      }
+    },
+    {
+      "id": "dhap",
+      "name": "Dihydroxyacetone phosphate",
+      "abbr": "DHAP",
+      "carbons": 3,
+      "smiles": "C(C(=O)COP(=O)(O)O)O",
+      "smilesSource": "PubChem",
+      "explanation": "Dihydroxyacetone phosphate is a molecule with three carbon atoms that plays a role in the process of glycolysis. It is an intermediate, meaning it is formed at one stage of glycolysis and then converted into another molecule further on in the process.",
+      "pos": {
+        "x": 180,
+        "y": 610
+      }
+    },
+    {
+      "id": "g3p",
+      "name": "Glyceraldehyde 3-phosphate",
+      "abbr": "G3P",
+      "carbons": 3,
+      "smiles": "C(C(C=O)O)OP(=O)(O)O",
+      "smilesSource": "PubChem",
+      "explanation": "Glyceraldehyde 3-phosphate is a molecule with three carbon atoms that plays a role in the process of glycolysis. It is an intermediate, meaning it is formed at one stage of glycolysis and then converted into another molecule at a later stage.",
+      "pos": {
+        "x": 420,
+        "y": 610
+      }
+    },
+    {
+      "id": "bpg13",
+      "name": "1,3-Bisphosphoglycerate",
+      "abbr": "1,3-BPG",
+      "carbons": 3,
+      "smiles": "C(C(C(=O)OP(=O)(O)O)O)OP(=O)(O)O",
+      "smilesSource": "PubChem",
+      "explanation": "1,3-Bisphosphoglycerate is a molecule that has three carbon atoms and is involved in the process of glycolysis. It is an intermediate, meaning it is a temporary product formed during the glycolytic pathway.",
+      "pos": {
+        "x": 420,
+        "y": 805
+      }
+    },
+    {
+      "id": "pg3",
+      "name": "3-Phosphoglycerate",
+      "abbr": "3-PG",
+      "carbons": 3,
+      "smiles": "C(C(C(=O)O)O)OP(=O)(O)O",
+      "smilesSource": "PubChem",
+      "explanation": "3-Phosphoglycerate is a molecule with three carbon atoms that plays a role in the process of glycolysis. It is an intermediate, meaning it is formed at one stage of glycolysis and then converted into another molecule at a later stage.",
+      "pos": {
+        "x": 420,
+        "y": 935
+      }
+    },
+    {
+      "id": "pg2",
+      "name": "2-Phosphoglycerate",
+      "abbr": "2-PG",
+      "carbons": 3,
+      "smiles": "C(C(C(=O)O)OP(=O)(O)O)O",
+      "smilesSource": "PubChem",
+      "explanation": "2-Phosphoglycerate is a molecule with three carbon atoms that plays a role in the process of glycolysis. It is an intermediate, meaning it is formed at one stage of glycolysis and then converted into another molecule at a later stage.",
+      "pos": {
+        "x": 420,
+        "y": 1065
+      }
+    },
+    {
+      "id": "pep",
+      "name": "Phosphoenolpyruvate",
+      "abbr": "PEP",
+      "carbons": 3,
+      "smiles": "C=C(C(=O)O)OP(=O)(O)O",
+      "smilesSource": "PubChem",
+      "explanation": "Phosphoenolpyruvate is a molecule with three carbon atoms that plays a role in glycolysis. It acts as an intermediate in this process, meaning it is formed and then converted into another molecule as glycolysis proceeds.",
+      "pos": {
+        "x": 420,
+        "y": 1195
+      }
+    },
+    {
+      "id": "pyruvate",
+      "name": "Pyruvate",
+      "abbr": "Pyruvate",
+      "carbons": 3,
+      "smiles": "CC(=O)C(=O)O",
+      "smilesSource": "PubChem",
+      "explanation": "Pyruvate is a molecule with three carbon atoms that plays a role in glycolysis. It is an intermediate, meaning it is a temporary product formed during the glycolytic process.",
+      "pos": {
+        "x": 420,
+        "y": 1325
+      }
+    }
+  ],
+  "reactions": [
+    {
+      "id": "r1",
+      "enzyme": "Hexokinase",
+      "ec": "2.7.1.1",
+      "gene": "HK1",
+      "reactomeId": "R-HSA-70420",
+      "substrates": [
+        "glucose"
+      ],
+      "products": [
+        "g6p"
+      ],
+      "consumes": [
+        "ATP"
+      ],
+      "produces": [
+        "ADP"
+      ],
+      "deltaATP": -1,
+      "deltaNADH": 0,
+      "multiplicity": 1,
+      "explanation": "Hexokinase is an enzyme that traps glucose inside the cell by adding a phosphate group to it, making it unable to cross the cell membrane. This reaction is the first of two steps that use ATP to prepare glucose for further processing in the cell.",
+      "references": [
+        {
+          "pmid": "37443289",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/37443289/"
+        },
+        {
+          "pmid": "35216280",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/35216280/"
+        }
+      ],
+      "pos": {
+        "x": 300,
+        "y": 155
+      }
+    },
+    {
+      "id": "r2",
+      "enzyme": "Phosphoglucose isomerase",
+      "ec": "5.3.1.9",
+      "gene": "GPI",
+      "reactomeId": "R-HSA-70467",
+      "substrates": [
+        "g6p"
+      ],
+      "products": [
+        "f6p"
+      ],
+      "consumes": [],
+      "produces": [],
+      "deltaATP": 0,
+      "deltaNADH": 0,
+      "multiplicity": 1,
+      "explanation": "Phosphoglucose isomerase is an enzyme that converts an aldose into a ketose. It does this by repositioning the carbonyl group, allowing the next step of phosphorylation to occur at the first carbon (C1).",
+      "references": [
+        {
+          "pmid": "37506695",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/37506695/"
+        },
+        {
+          "pmid": "35913157",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/35913157/"
+        }
+      ],
+      "pos": {
+        "x": 300,
+        "y": 285
+      }
+    },
+    {
+      "id": "r3",
+      "enzyme": "Phosphofructokinase-1",
+      "ec": "2.7.1.11",
+      "gene": "PFKL",
+      "reactomeId": "R-HSA-70471",
+      "substrates": [
+        "f6p"
+      ],
+      "products": [
+        "fbp"
+      ],
+      "consumes": [
+        "ATP"
+      ],
+      "produces": [
+        "ADP"
+      ],
+      "deltaATP": -1,
+      "deltaNADH": 0,
+      "multiplicity": 1,
+      "explanation": "Phosphofructokinase-1 is a key enzyme in glycolysis that controls the rate at which the process occurs. It is the point at which the cell makes its second investment of ATP in the glycolytic pathway.",
+      "references": [
+        {
+          "pmid": "38086793",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/38086793/"
+        },
+        {
+          "pmid": "40770805",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/40770805/"
+        }
+      ],
+      "pos": {
+        "x": 300,
+        "y": 415
+      }
+    },
+    {
+      "id": "r4",
+      "enzyme": "Aldolase",
+      "ec": "4.1.2.13",
+      "gene": "ALDOA",
+      "reactomeId": "R-HSA-70486",
+      "substrates": [
+        "fbp"
+      ],
+      "products": [
+        "dhap",
+        "g3p"
+      ],
+      "consumes": [],
+      "produces": [],
+      "deltaATP": 0,
+      "deltaNADH": 0,
+      "multiplicity": 1,
+      "explanation": "Aldolase is an enzyme that splits a 6-carbon sugar into two 3-carbon pieces. This splitting allows the subsequent steps in the process to occur twice for each glucose molecule.",
+      "references": [
+        {
+          "pmid": "39833612",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/39833612/"
+        },
+        {
+          "pmid": "39808355",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/39808355/"
+        }
+      ],
+      "pos": {
+        "x": 300,
+        "y": 545
+      }
+    },
+    {
+      "id": "r5",
+      "enzyme": "Triosephosphate isomerase",
+      "ec": "5.3.1.1",
+      "gene": "TPI1",
+      "reactomeId": "R-HSA-70494",
+      "substrates": [
+        "dhap"
+      ],
+      "products": [
+        "g3p"
+      ],
+      "consumes": [],
+      "produces": [],
+      "deltaATP": 0,
+      "deltaNADH": 0,
+      "multiplicity": 1,
+      "explanation": "Triosephosphate isomerase converts dihydroxyacetone phosphate (DHAP) into glyceraldehyde-3-phosphate (G3P), allowing both halves of the sugar to continue through the pathway. This enzyme is considered near-catalytically-perfect, meaning it is extremely efficient at facilitating this conversion.",
+      "references": [
+        {
+          "pmid": "36077431",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/36077431/"
+        },
+        {
+          "pmid": "40845110",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/40845110/"
+        }
+      ],
+      "pos": {
+        "x": 180,
+        "y": 675
+      }
+    },
+    {
+      "id": "r6",
+      "enzyme": "Glyceraldehyde-3-phosphate dehydrogenase",
+      "ec": "1.2.1.12",
+      "gene": "GAPDH",
+      "reactomeId": "R-HSA-70496",
+      "substrates": [
+        "g3p"
+      ],
+      "products": [
+        "bpg13"
+      ],
+      "consumes": [
+        "NAD+",
+        "Pi"
+      ],
+      "produces": [
+        "NADH"
+      ],
+      "deltaATP": 0,
+      "deltaNADH": 1,
+      "multiplicity": 2,
+      "explanation": "Glyceraldehyde-3-phosphate dehydrogenase is an enzyme that oxidizes glyceraldehyde-3-phosphate (G3P) and captures the energy as NADH and a high-energy phosphate bond. This enzyme runs twice for every glucose molecule that is processed.",
+      "references": [
+        {
+          "pmid": "28271485",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/28271485/"
+        },
+        {
+          "pmid": "32028064",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/32028064/"
+        }
+      ],
+      "pos": {
+        "x": 420,
+        "y": 740
+      }
+    },
+    {
+      "id": "r7",
+      "enzyme": "Phosphoglycerate kinase",
+      "ec": "2.7.2.3",
+      "gene": "PGK1",
+      "reactomeId": "R-HSA-70501",
+      "substrates": [
+        "bpg13"
+      ],
+      "products": [
+        "pg3"
+      ],
+      "consumes": [
+        "ADP"
+      ],
+      "produces": [
+        "ATP"
+      ],
+      "deltaATP": 1,
+      "deltaNADH": 0,
+      "multiplicity": 2,
+      "explanation": "Phosphoglycerate kinase is the enzyme responsible for the first step in generating ATP during cellular respiration. This step produces two ATP molecules per glucose molecule through a process called substrate-level phosphorylation.",
+      "references": [
+        {
+          "pmid": "39134530",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/39134530/"
+        },
+        {
+          "pmid": "26942675",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/26942675/"
+        }
+      ],
+      "pos": {
+        "x": 420,
+        "y": 870
+      }
+    },
+    {
+      "id": "r8",
+      "enzyme": "Phosphoglycerate mutase",
+      "ec": "5.4.2.11",
+      "gene": "PGAM1",
+      "reactomeId": "R-HSA-70508",
+      "substrates": [
+        "pg3"
+      ],
+      "products": [
+        "pg2"
+      ],
+      "consumes": [],
+      "produces": [],
+      "deltaATP": 0,
+      "deltaNADH": 0,
+      "multiplicity": 2,
+      "explanation": "Phosphoglycerate mutase is an enzyme that moves a phosphate group from the third carbon (C3) to the second carbon (C2) of a molecule. This action prepares the molecule for the formation of the next high-energy intermediate in a biochemical pathway.",
+      "references": [
+        {
+          "pmid": "35256934",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/35256934/"
+        },
+        {
+          "pmid": "24285383",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/24285383/"
+        }
+      ],
+      "pos": {
+        "x": 420,
+        "y": 1000
+      }
+    },
+    {
+      "id": "r9",
+      "enzyme": "Enolase",
+      "ec": "4.2.1.11",
+      "gene": "ENO1",
+      "reactomeId": "R-HSA-70505",
+      "substrates": [
+        "pg2"
+      ],
+      "products": [
+        "pep"
+      ],
+      "consumes": [],
+      "produces": [
+        "H2O"
+      ],
+      "deltaATP": 0,
+      "deltaNADH": 0,
+      "multiplicity": 2,
+      "explanation": "Enolase is an enzyme that removes water from a molecule to form phosphoenolpyruvate. The phosphate bond in phosphoenolpyruvate is one of the highest-energy bonds found in metabolism.",
+      "references": [
+        {
+          "pmid": "39446384",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/39446384/"
+        },
+        {
+          "pmid": "35709751",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/35709751/"
+        }
+      ],
+      "pos": {
+        "x": 420,
+        "y": 1130
+      }
+    },
+    {
+      "id": "r10",
+      "enzyme": "Pyruvate kinase",
+      "ec": "2.7.1.40",
+      "gene": "PKM",
+      "reactomeId": "R-HSA-70511",
+      "substrates": [
+        "pep"
+      ],
+      "products": [
+        "pyruvate"
+      ],
+      "consumes": [
+        "ADP"
+      ],
+      "produces": [
+        "ATP"
+      ],
+      "deltaATP": 1,
+      "deltaNADH": 0,
+      "multiplicity": 2,
+      "explanation": "Pyruvate kinase is involved in the final, irreversible step of glycolysis. This step is the second reaction that generates ATP, resulting in a net yield of 2 ATP and 2 NADH per glucose molecule.",
+      "references": [
+        {
+          "pmid": "36439872",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/36439872/"
+        },
+        {
+          "pmid": "18337823",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/18337823/"
+        }
+      ],
+      "pos": {
+        "x": 420,
+        "y": 1260
+      }
+    }
+  ],
+  "diseases": [
+    {
+      "id": "pk-def",
+      "name": "Pyruvate kinase deficiency",
+      "reactionId": "r10",
+      "enzyme": "Pyruvate kinase",
+      "summary": "The most common enzyme defect of glycolysis. Red blood cells cannot make enough ATP and lyse, causing chronic hemolytic anemia."
+    }
+  ]
+}

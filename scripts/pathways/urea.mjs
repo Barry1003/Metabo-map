@@ -1,0 +1,52 @@
+// Urea cycle — the classic ring. Ornithine is regenerated each turn.
+// Spans mitochondria (CPS1, OTC) and cytosol (ASS, ASL, ARG1); locations are
+// shown per-node in the inspector while the graph keeps one clean ring.
+export default {
+  id: "urea",
+  name: "Urea Cycle",
+  subtitle: "Ammonia → Urea · spans cytosol & mitochondria · −4 ATP equivalents",
+  compartment: "Cytosol & mitochondria",
+  reactomeId: "R-HSA-70635",
+  pubmedHint: "urea cycle",
+  source: { pathway: "Reactome R-HSA-70635", license: "CC BY 4.0" },
+  layout: {
+    type: "cycle",
+    ring: ["ornithine", "citrulline", "argininosucc", "arginine"],
+  },
+  metabolites: [
+    { id: "ornithine", name: "Ornithine", abbr: "Ornithine", carbons: 5, query: "L-ornithine", compartment: "Mitochondrion / cytosol" },
+    { id: "citrulline", name: "Citrulline", abbr: "Citrulline", carbons: 6, query: "L-citrulline", compartment: "Mitochondrion / cytosol" },
+    { id: "argininosucc", name: "Argininosuccinate", abbr: "Argininosucc.", carbons: 10, query: "argininosuccinic acid", compartment: "Cytosol" },
+    { id: "arginine", name: "Arginine", abbr: "Arginine", carbons: 6, query: "L-arginine", compartment: "Cytosol" },
+    { id: "carbamoylp", name: "Carbamoyl phosphate", abbr: "Carbamoyl-P", carbons: 1, query: "carbamoyl phosphate", compartment: "Mitochondrial matrix" },
+    { id: "aspartate", name: "Aspartate", abbr: "Aspartate", carbons: 4, query: "L-aspartic acid", compartment: "Cytosol" },
+    { id: "fumarate", name: "Fumarate", abbr: "Fumarate", carbons: 4, query: "fumaric acid", compartment: "Cytosol" },
+    { id: "urea", name: "Urea", abbr: "Urea", carbons: 1, query: "urea", compartment: "Cytosol" },
+  ],
+  reactions: [
+    { id: "u1", enzyme: "Carbamoyl phosphate synthetase I", ec: "6.3.4.16", gene: "CPS1", reactomeId: "R-HSA-70572",
+      substrates: [], products: ["carbamoylp"], consumes: ["ATP", "ATP"], produces: ["ADP", "ADP", "Pi"],
+      deltaATP: -2, deltaNADH: 0, multiplicity: 1, compartment: "Mitochondrial matrix", fixed: { x: 610, y: 90 },
+      note: "Commits ammonia to disposal. Combines ammonia (NH3) and bicarbonate (CO2) using two ATP to make carbamoyl phosphate inside the mitochondrion. This is the rate-limiting, committed step." },
+    { id: "u2", enzyme: "Ornithine transcarbamylase", ec: "2.1.3.3", gene: "OTC", reactomeId: "R-HSA-70578",
+      substrates: ["ornithine", "carbamoylp"], products: ["citrulline"], produces: ["Pi"],
+      deltaATP: 0, deltaNADH: 0, multiplicity: 1, compartment: "Mitochondrial matrix",
+      note: "Transfers the carbamoyl group onto ornithine to form citrulline, which is then exported from the mitochondrion to the cytosol." },
+    { id: "u3", enzyme: "Argininosuccinate synthetase", ec: "6.3.4.5", gene: "ASS1", reactomeId: "R-HSA-70581",
+      substrates: ["citrulline", "aspartate"], products: ["argininosucc"], consumes: ["ATP"], produces: ["AMP", "PPi"],
+      deltaATP: -2, deltaNADH: 0, multiplicity: 1, compartment: "Cytosol",
+      note: "Joins citrulline to aspartate, which donates the second nitrogen of urea. Costs the equivalent of two ATP because ATP is split to AMP and pyrophosphate." },
+    { id: "u4", enzyme: "Argininosuccinate lyase", ec: "4.3.2.1", gene: "ASL", reactomeId: "R-HSA-70588",
+      substrates: ["argininosucc"], products: ["arginine", "fumarate"],
+      deltaATP: 0, deltaNADH: 0, multiplicity: 1, compartment: "Cytosol",
+      note: "Splits argininosuccinate into arginine and fumarate. The fumarate links the urea cycle to the citric acid cycle." },
+    { id: "u5", enzyme: "Arginase", ec: "3.5.3.1", gene: "ARG1", reactomeId: "R-HSA-70591",
+      substrates: ["arginine"], products: ["ornithine", "urea"], consumes: ["H2O"],
+      deltaATP: 0, deltaNADH: 0, multiplicity: 1, compartment: "Cytosol",
+      note: "Cleaves arginine into urea (excreted) and ornithine, which re-enters the mitochondrion to begin the cycle again." },
+  ],
+  diseases: [
+    { id: "otc-def", name: "OTC deficiency", reactionId: "u2", enzyme: "Ornithine transcarbamylase",
+      summary: "The most common urea cycle disorder, X-linked. Ammonia cannot be converted to citrulline efficiently, so toxic ammonia accumulates in the blood (hyperammonemia)." },
+  ],
+};
