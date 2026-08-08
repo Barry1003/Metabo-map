@@ -1,17 +1,15 @@
-// Pathway → Mermaid flowchart, for pasting into notes (Obsidian, Notion,
-// GitHub, VS Code) or printing.
+// Pathway → Mermaid flowchart, for the in-app Diagram view and for export.
 //
-// This is an EXPORT format, not the canvas — Mermaid renders a static SVG with
-// no selection or traversal, which is why the app still draws with Cytoscape.
-// What it gives you instead is portability: your revision notes keep the
-// pathway as text you can diff, edit and print.
+// The point of this view is READABILITY, not topology. The Cytoscape canvas
+// already shows you what connects to what; a dot labelled "G6P" is a map
+// reference, not an explanation. So here every box carries teaching content —
+// what the step does, what it costs, whether it commits you — and the whole
+// thing reads top-to-bottom like a worked derivation.
 //
-// Enzymes normally ride on the arrow rather than sitting in their own box —
-// that is how the textbooks draw it and it halves the node count. A reaction
-// with several substrates AND several products can't be drawn that way, so
-// those get an explicit enzyme node.
+// Both metabolites and reactions get boxes. Putting the enzyme on the arrow is
+// more compact, but compact is the opposite of what this view is for.
 
-import type { Pathway } from "../types";
+import type { Pathway, Reaction } from "../types";
 import { metaFor, type Level } from "./levels";
 
 /** Mermaid node ids must be bare identifiers. */
@@ -19,23 +17,62 @@ function nodeId(prefix: string, raw: string): string {
   return `${prefix}_${raw.replace(/[^a-zA-Z0-9]+/g, "_").replace(/^_+|_+$/g, "")}`;
 }
 
-// Mermaid takes quoted labels, so most punctuation is safe. Two things aren't:
-// a literal quote ends the label, and a pipe closes the -->|"..."| edge form.
+// Quoted labels are safe for most punctuation. A literal quote ends the label
+// and a pipe would close an edge label. Angle brackets matter too: the diagram
+// renders with HTML labels enabled, and metabolite/enzyme names on live
+// pathways come from Reactome, so data must never carry its own markup. The
+// <b> and <br/> tags below are added OUTSIDE this function, on purpose.
 function esc(text: string): string {
-  return text.replace(/"/g, "&quot;").replace(/\|/g, "/");
+  return text
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/\|/g, "/");
 }
 
-function edgeLabel(
-  enzyme: string,
-  extras: string[],
-): string {
-  const parts = [esc(enzyme), ...extras.filter(Boolean).map(esc)];
-  return parts.join("<br/>");
+/**
+ * First sentence of an explanation, with the "X is an enzyme that …" preamble
+ * stripped, clipped to fit a box. Turns curated prose into a caption.
+ */
+function gist(text: string, subject: string, max: number): string {
+  if (!text) return "";
+  const m = text.match(/^(.*?[.!?])(\s|$)/);
+  let s = (m ? m[1] : text).trim();
+
+  const subj = subject.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  s = s
+    .replace(new RegExp(`^${subj}\\s+is\\s+(an?|the)\\s+\\S+\\s+(that|which)\\s+`, "i"), "")
+    .replace(new RegExp(`^${subj}\\s+is\\s+(an?|the)\\s+`, "i"), "")
+    .replace(new RegExp(`^${subj}\\s+`, "i"), "")
+    .replace(/\.$/, "")
+    .trim();
+
+  if (!s) return "";
+  s = s[0].toUpperCase() + s.slice(1);
+  if (s.length <= max) return s;
+  const cut = s.slice(0, max);
+  const sp = cut.lastIndexOf(" ");
+  // Drop any dangling punctuation so the ellipsis reads as a clean break.
+  const trimmed = (sp > 20 ? cut.slice(0, sp) : cut).replace(/[\s,;:·—-]+$/, "");
+  return `${trimmed}…`;
+}
+
+function energyLine(r: Reaction, showCofactors: boolean): string {
+  const bits: string[] = [];
+  if (r.deltaATP) bits.push(`${r.deltaATP > 0 ? "+" : "−"}${Math.abs(r.deltaATP)} ATP`);
+  if (r.deltaNADH) bits.push(`+${r.deltaNADH} NADH`);
+  if (showCofactors) {
+    const flow = [r.consumes.join(" + "), r.produces.join(" + ")].filter(Boolean);
+    if (flow.length === 2) bits.push(`${flow[0]} → ${flow[1]}`);
+    else if (flow.length === 1) bits.push(flow[0]);
+  }
+  if (r.multiplicity > 1) bits.push(`×${r.multiplicity}`);
+  return bits.join(" · ");
 }
 
 export interface MermaidOptions {
   level: Level;
-  /** Include the ATP/NADH balance and cofactors on each arrow. */
   showCofactors: boolean;
 }
 
@@ -45,54 +82,44 @@ export function toMermaid(p: Pathway, { level, showCofactors }: MermaidOptions):
 
   lines.push(`%% ${p.name}${p.subtitle ? ` — ${p.subtitle}` : ""}`);
   lines.push(`%% Compartment: ${p.compartment} · Level: ${meta.full}`);
-  if (p.source?.pathway) lines.push(`%% Source: ${p.source.pathway}${p.source.license ? ` (${p.source.license})` : ""}`);
-  lines.push(`%% Exported from MetaboMap`);
+  if (p.source?.pathway) {
+    lines.push(`%% Source: ${p.source.pathway}${p.source.license ? ` (${p.source.license})` : ""}`);
+  }
   lines.push("flowchart TD");
 
-  // Declare metabolites first so labels are full names, not abbreviations.
   for (const m of p.metabolites) {
-    const label = m.name && m.name !== m.abbr ? `${m.abbr} — ${m.name}` : m.abbr || m.name;
-    lines.push(`  ${nodeId("m", m.id)}["${esc(label)}"]`);
+    const rows = [`<b>${esc(m.name || m.abbr)}</b>`];
+    if (m.name && m.abbr && m.name !== m.abbr) rows.push(esc(m.abbr));
+    if (m.carbons && level !== "undergrad") rows.push(`${m.carbons} carbons`);
+    lines.push(`  ${nodeId("m", m.id)}["${rows.join("<br/>")}"]:::met`);
   }
 
   lines.push("");
 
   p.reactions.forEach((r, idx) => {
-    const extras: string[] = [];
+    const rid = nodeId("r", r.id);
+    const rows = [`<b>${r.number ?? idx + 1} · ${esc(r.enzyme)}</b>`];
+
+    const caption = gist(r.explanation, r.enzyme, level === "undergrad" ? 66 : 86);
+    if (caption) rows.push(esc(caption));
+
+    const energy = energyLine(r, showCofactors);
+    if (energy) rows.push(esc(energy));
+
     if (meta.annotate) {
       const ident = [r.ec ? `EC ${r.ec}` : "", r.gene].filter(Boolean).join(" · ");
-      if (ident) extras.push(ident);
+      if (ident) rows.push(esc(ident));
     }
-    if (showCofactors) {
-      const flow = [r.consumes.join(" + "), r.produces.join(" + ")].filter(Boolean);
-      if (flow.length === 2) extras.push(`${flow[0]} → ${flow[1]}`);
-      else if (flow.length === 1) extras.push(flow[0]);
-    }
-    const energy = [
-      r.deltaATP ? `${r.deltaATP > 0 ? "+" : ""}${r.deltaATP} ATP` : "",
-      r.deltaNADH ? `+${r.deltaNADH} NADH` : "",
-    ].filter(Boolean).join(", ");
-    if (energy) extras.push(energy);
 
-    // Curated data doesn't always carry an explicit step number; fall back to
-    // position, exactly as the inspector's step list does.
-    const label = edgeLabel(`${r.number ?? idx + 1}. ${r.enzyme}`, extras);
-    const subs = r.substrates.map((s) => nodeId("m", s));
-    const prods = r.products.map((s) => nodeId("m", s));
-
-    if (subs.length === 0 || prods.length === 0) return;
-
-    if (subs.length === 1 || prods.length === 1) {
-      // Fan in or fan out — the enzyme rides on every arrow.
-      for (const s of subs) for (const t of prods) lines.push(`  ${s} -->|"${label}"| ${t}`);
-    } else {
-      // Many-to-many needs a real node for the enzyme.
-      const rid = nodeId("r", r.id);
-      lines.push(`  ${rid}{{"${label}"}}`);
-      for (const s of subs) lines.push(`  ${s} --> ${rid}`);
-      for (const t of prods) lines.push(`  ${rid} --> ${t}`);
-    }
+    lines.push(`  ${rid}["${rows.join("<br/>")}"]:::enz`);
+    for (const s of r.substrates) lines.push(`  ${nodeId("m", s)} --> ${rid}`);
+    for (const t of r.products) lines.push(`  ${rid} --> ${nodeId("m", t)}`);
   });
+
+  // Self-contained styling, so the diagram looks deliberate wherever it lands.
+  lines.push("");
+  lines.push("  classDef met fill:#101d2b,stroke:#48C9D9,stroke-width:1.5px,color:#E8EEF4;");
+  lines.push("  classDef enz fill:#1c1608,stroke:#F2A93B,stroke-width:1.5px,color:#F6E7C8;");
 
   return lines.join("\n");
 }

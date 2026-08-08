@@ -10,6 +10,7 @@ function friendlyError(err: unknown): string {
   return msg;
 }
 import PathwayGraph from "./components/PathwayGraph";
+import PathwayDiagram from "./components/PathwayDiagram";
 import Inspector from "./components/Inspector";
 import Ledger from "./components/Ledger";
 import Quiz from "./components/Quiz";
@@ -26,6 +27,12 @@ const curatedPathways: Record<string, Pathway> = {
 };
 
 type Mode = "explore" | "quiz";
+
+// Two ways to look at the same pathway. MAP is the interactive Cytoscape canvas
+// — click a node, trace downstream, break an enzyme. DIAGRAM is the readable
+// one: every step in a box with what it does and what it costs, top to bottom,
+// the way you'd want it laid out in revision notes.
+type View = "map" | "diagram";
 
 function useIsMobile() {
   const [mobile, setMobile] = useState(
@@ -57,23 +64,32 @@ function Toggle({ on, onClick, children }: { on: boolean; onClick: () => void; c
   );
 }
 
-// Study level. Drives both how dense the canvas is and how deep the written
-// notes go, so it sits in the header next to the mode switch rather than being
-// buried in settings.
-function LevelPicker({ level, onChange }: { level: Level; onChange: (l: Level) => void }) {
+function Segmented<T extends string>({
+  options,
+  value,
+  onChange,
+  ariaLabel,
+  titles,
+}: {
+  options: [T, string][];
+  value: T;
+  onChange: (v: T) => void;
+  ariaLabel: string;
+  titles?: Record<string, string>;
+}) {
   return (
     <div
       role="group"
-      aria-label="Study level"
+      aria-label={ariaLabel}
       style={{ display: "flex", border: "1px solid #1E2732", borderRadius: 4, overflow: "hidden" }}
     >
-      {levelMeta.map((m) => {
-        const on = m.id === level;
+      {options.map(([id, text]) => {
+        const on = id === value;
         return (
           <button
-            key={m.id}
-            onClick={() => onChange(m.id)}
-            title={`${m.full} — ${m.blurb}`}
+            key={id}
+            onClick={() => onChange(id)}
+            title={titles?.[id]}
             aria-pressed={on}
             style={{
               fontFamily: "var(--font-condensed)", fontSize: 11, letterSpacing: "0.06em", textTransform: "uppercase",
@@ -82,11 +98,26 @@ function LevelPicker({ level, onChange }: { level: Level; onChange: (l: Level) =
               color: on ? "#48C9D9" : "#7D8B9C",
             }}
           >
-            {m.label}
+            {text}
           </button>
         );
       })}
     </div>
+  );
+}
+
+// Study level. Drives how dense the canvas is, how much each diagram box says,
+// and how deep the written notes go — so it sits in the header rather than
+// being buried in settings.
+function LevelPicker({ level, onChange }: { level: Level; onChange: (l: Level) => void }) {
+  return (
+    <Segmented
+      ariaLabel="Study level"
+      value={level}
+      onChange={onChange}
+      options={levelMeta.map((m) => [m.id, m.label] as [Level, string])}
+      titles={Object.fromEntries(levelMeta.map((m) => [m.id, `${m.full} — ${m.blurb}`]))}
+    />
   );
 }
 
@@ -95,6 +126,7 @@ export default function App() {
   const [pathway, setPathway] = useState<Pathway>(curatedPathways.glycolysis);
 
   const [mode, setMode] = useState<Mode>("explore");
+  const [view, setView] = useState<View>("map");
   const [level, setLevel] = useState<Level>(loadLevel);
   const [selection, setSelection] = useState<Selection>(null);
   // Level sets the default graph density; cofactors stay off on small screens.
@@ -195,6 +227,12 @@ export default function App() {
           {mode === "explore" && (
             <>
               {!isMobile && <div style={{ width: 1, height: 22, background: "#1E2732", margin: "0 4px" }} />}
+              <Segmented
+                options={[["map", "Map"], ["diagram", "Diagram"]]}
+                value={view}
+                onChange={setView}
+                ariaLabel="View"
+              />
               <Toggle on={selection?.kind === "about"} onClick={() => setSelection({ kind: "about" })}>ⓘ About</Toggle>
               <Toggle on={showCofactors} onClick={() => setShowCofactors((v) => !v)}>Cofactors</Toggle>
               <Toggle on={exportOpen} onClick={() => setExportOpen(true)}>⧉ Export</Toggle>
@@ -243,16 +281,20 @@ export default function App() {
         <>
           <div style={{ flex: 1, display: "flex", minHeight: 0 }}>
             <div style={{ flex: 1, minWidth: 0, position: "relative" }}>
-              <PathwayGraph
-                pathway={pathway}
-                selection={selection}
-                showCofactors={showCofactors}
-                annotateEnzymes={metaFor(level).annotate}
-                brokenReactionId={brokenReactionId}
-                quizHiddenEnzymes={false}
-                onSelect={onSelect}
-              />
-              {!isMobile && <Legend />}
+              {view === "map" ? (
+                <PathwayGraph
+                  pathway={pathway}
+                  selection={selection}
+                  showCofactors={showCofactors}
+                  annotateEnzymes={metaFor(level).annotate}
+                  brokenReactionId={brokenReactionId}
+                  quizHiddenEnzymes={false}
+                  onSelect={onSelect}
+                />
+              ) : (
+                <PathwayDiagram pathway={pathway} level={level} showCofactors={showCofactors} />
+              )}
+              {!isMobile && view === "map" && <Legend />}
             </div>
             {/* Desktop: fixed sidebar. Mobile: bottom sheet only when something is selected. */}
             {!isMobile && <Inspector selection={selection} pathway={pathway} level={level} onSelect={onSelect} />}
