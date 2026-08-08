@@ -49,6 +49,8 @@ interface Props {
   pathway: Pathway;
   selection: Selection;
   showCofactors: boolean;
+  /** PhD level: label enzyme nodes with their EC number and gene symbol. */
+  annotateEnzymes: boolean;
   brokenReactionId: string | null;
   quizHiddenEnzymes: boolean;
   onSelect: (sel: Selection) => void;
@@ -72,7 +74,7 @@ const isEnergy = (label: string) => /^(ATP|ADP|NAD\+?|NADH|NADP\+?|NADPH|FAD|FAD
 // single labelled compartment band. Live pathways are laid out at runtime by
 // dagre/fcose, which don't support compound nodes — so they render FLAT (no
 // band); per-node compartment is shown in the inspector instead.
-function buildElements(p: Pathway, showCofactors: boolean): ElementDefinition[] {
+function buildElements(p: Pathway, showCofactors: boolean, annotateEnzymes: boolean): ElementDefinition[] {
   const els: ElementDefinition[] = [];
   const preset = !p.live;
 
@@ -89,8 +91,20 @@ function buildElements(p: Pathway, showCofactors: boolean): ElementDefinition[] 
   }
 
   for (const r of p.reactions) {
+    // At doctoral level the node carries its own identifiers, so the graph can be
+    // read without opening the inspector on every step.
+    const sub = annotateEnzymes
+      ? [r.ec ? `EC ${r.ec}` : "", r.gene].filter(Boolean).join(" · ")
+      : "";
     els.push({
-      data: { id: r.id, label: r.enzyme, type: "enzyme", num: r.number ? String(r.number) : undefined, ...parentData },
+      data: {
+        id: r.id,
+        label: sub ? `${r.enzyme}\n${sub}` : r.enzyme,
+        type: "enzyme",
+        sub: sub || undefined,
+        num: r.number ? String(r.number) : undefined,
+        ...parentData,
+      },
       ...(preset ? { position: scale(r.pos) } : {}),
     });
     for (const sid of r.substrates)
@@ -181,6 +195,11 @@ const stylesheet: cytoscape.StylesheetJson = [
     },
   },
   {
+    // Annotated (PhD) enzyme nodes carry a second line, so let them grow.
+    selector: "node[type='enzyme'][sub]",
+    style: { height: "label", "text-max-width": "150", padding: "9" },
+  },
+  {
     selector: "node[type='cofactor']",
     style: {
       "background-color": "#4a5a72",
@@ -254,6 +273,7 @@ export default function PathwayGraph({
   pathway,
   selection,
   showCofactors,
+  annotateEnzymes,
   brokenReactionId,
   quizHiddenEnzymes,
   onSelect,
@@ -265,7 +285,7 @@ export default function PathwayGraph({
     if (!containerRef.current) return;
     const cy = cytoscape({
       container: containerRef.current,
-      elements: buildElements(pathway, showCofactors),
+      elements: buildElements(pathway, showCofactors, annotateEnzymes),
       style: stylesheet,
       layout: { name: "preset" },
       minZoom: 0.15,
@@ -318,7 +338,7 @@ export default function PathwayGraph({
     ro.observe(containerRef.current);
 
     return () => { cancelAnimationFrame(raf); ro.disconnect(); cy.destroy(); };
-  }, [pathway, showCofactors, onSelect]);
+  }, [pathway, showCofactors, annotateEnzymes, onSelect]);
 
   // Selection highlight + light up the edges touching the selected node.
   useEffect(() => {

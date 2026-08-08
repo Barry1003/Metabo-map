@@ -14,6 +14,10 @@ import Inspector from "./components/Inspector";
 import Ledger from "./components/Ledger";
 import Quiz from "./components/Quiz";
 import PathwayPicker from "./components/PathwayPicker";
+import AiSettings from "./components/AiSettings";
+import ExportPanel from "./components/ExportPanel";
+import { getPremiumConfig } from "./lib/enrich";
+import { levelMeta, loadLevel, metaFor, saveLevel, type Level } from "./lib/levels";
 
 // Curated pathways ship pre-built and polished; everything else loads live
 // from Reactome via the picker.
@@ -53,20 +57,65 @@ function Toggle({ on, onClick, children }: { on: boolean; onClick: () => void; c
   );
 }
 
+// Study level. Drives both how dense the canvas is and how deep the written
+// notes go, so it sits in the header next to the mode switch rather than being
+// buried in settings.
+function LevelPicker({ level, onChange }: { level: Level; onChange: (l: Level) => void }) {
+  return (
+    <div
+      role="group"
+      aria-label="Study level"
+      style={{ display: "flex", border: "1px solid #1E2732", borderRadius: 4, overflow: "hidden" }}
+    >
+      {levelMeta.map((m) => {
+        const on = m.id === level;
+        return (
+          <button
+            key={m.id}
+            onClick={() => onChange(m.id)}
+            title={`${m.full} — ${m.blurb}`}
+            aria-pressed={on}
+            style={{
+              fontFamily: "var(--font-condensed)", fontSize: 11, letterSpacing: "0.06em", textTransform: "uppercase",
+              padding: "6px 10px", border: "none", cursor: "pointer", whiteSpace: "nowrap",
+              background: on ? "rgba(72,201,217,0.14)" : "transparent",
+              color: on ? "#48C9D9" : "#7D8B9C",
+            }}
+          >
+            {m.label}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
 export default function App() {
   const isMobile = useIsMobile();
   const [pathway, setPathway] = useState<Pathway>(curatedPathways.glycolysis);
 
   const [mode, setMode] = useState<Mode>("explore");
+  const [level, setLevel] = useState<Level>(loadLevel);
   const [selection, setSelection] = useState<Selection>(null);
-  const [showCofactors, setShowCofactors] = useState(!isMobile); // cofactors off by default on small screens
+  // Level sets the default graph density; cofactors stay off on small screens.
+  const [showCofactors, setShowCofactors] = useState(() => metaFor(loadLevel()).cofactors && !isMobile);
   const [disease, setDisease] = useState<string | null>(null);
   const [step, setStep] = useState(0);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [loading, setLoading] = useState<string | null>(null); // name of pathway being fetched
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [exportOpen, setExportOpen] = useState(false);
+  const [premiumOn, setPremiumOn] = useState(!!getPremiumConfig());
 
   const resetView = () => { setSelection(null); setStep(0); setDisease(null); };
+
+  // Changing level re-densifies the canvas to that level's default. The
+  // Cofactors toggle can still override it afterwards for the current view.
+  useEffect(() => {
+    saveLevel(level);
+    setShowCofactors(metaFor(level).cofactors && !isMobile);
+  }, [level, isMobile]);
 
   const pickCurated = useCallback((id: string) => {
     const p = curatedPathways[id];
@@ -141,11 +190,14 @@ export default function App() {
         <div style={{ marginLeft: "auto", display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
           <Toggle on={mode === "explore"} onClick={() => setMode("explore")}>Explore</Toggle>
           <Toggle on={mode === "quiz"} onClick={() => setMode("quiz")}>Quiz</Toggle>
+          <LevelPicker level={level} onChange={setLevel} />
+          <Toggle on={premiumOn} onClick={() => setSettingsOpen(true)}>{premiumOn ? "✦ Opus" : "✦ AI"}</Toggle>
           {mode === "explore" && (
             <>
               {!isMobile && <div style={{ width: 1, height: 22, background: "#1E2732", margin: "0 4px" }} />}
               <Toggle on={selection?.kind === "about"} onClick={() => setSelection({ kind: "about" })}>ⓘ About</Toggle>
               <Toggle on={showCofactors} onClick={() => setShowCofactors((v) => !v)}>Cofactors</Toggle>
+              <Toggle on={exportOpen} onClick={() => setExportOpen(true)}>⧉ Export</Toggle>
               <select
                 value={disease ?? ""}
                 onChange={(e) => setDisease(e.target.value || null)}
@@ -195,6 +247,7 @@ export default function App() {
                 pathway={pathway}
                 selection={selection}
                 showCofactors={showCofactors}
+                annotateEnzymes={metaFor(level).annotate}
                 brokenReactionId={brokenReactionId}
                 quizHiddenEnzymes={false}
                 onSelect={onSelect}
@@ -202,11 +255,11 @@ export default function App() {
               {!isMobile && <Legend />}
             </div>
             {/* Desktop: fixed sidebar. Mobile: bottom sheet only when something is selected. */}
-            {!isMobile && <Inspector selection={selection} pathway={pathway} onSelect={onSelect} />}
+            {!isMobile && <Inspector selection={selection} pathway={pathway} level={level} onSelect={onSelect} />}
           </div>
           <Ledger pathway={pathway} step={step} onStep={(n) => handleStep(n, pathway)} compact={isMobile} />
           {isMobile && selection && (
-            <Inspector selection={selection} pathway={pathway} mode="sheet" onClose={() => setSelection(null)} onSelect={onSelect} />
+            <Inspector selection={selection} pathway={pathway} level={level} mode="sheet" onClose={() => setSelection(null)} onSelect={onSelect} />
           )}
         </>
       ) : (
@@ -222,6 +275,19 @@ export default function App() {
           onPickLive={pickLive}
           onPickLiveByName={pickLiveByName}
           onClose={() => setPickerOpen(false)}
+        />
+      )}
+
+      {settingsOpen && (
+        <AiSettings onClose={() => { setSettingsOpen(false); setPremiumOn(!!getPremiumConfig()); }} />
+      )}
+
+      {exportOpen && (
+        <ExportPanel
+          pathway={pathway}
+          level={level}
+          showCofactors={showCofactors}
+          onClose={() => setExportOpen(false)}
         />
       )}
 

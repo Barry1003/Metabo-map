@@ -45,7 +45,10 @@ async function pubchemByChebi(chebi: string): Promise<string | null> {
   return null;
 }
 
-async function chebiFromReactome(entityId: string): Promise<{ chebi?: string; name?: string }> {
+// Exported so the fact-sheet lookup (facts.ts) can reuse the same chain rather
+// than reimplementing it — this is the non-obvious hop that makes live
+// metabolites resolvable at all.
+export async function chebiFromReactome(entityId: string): Promise<{ chebi?: string; name?: string }> {
   // Only real Reactome identifiers can be queried (not fallback displayNames).
   if (!/^R-[A-Z]+-\d+$/.test(entityId) && !/^\d+$/.test(entityId)) return {};
   try {

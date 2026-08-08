@@ -3,6 +3,9 @@ import SmilesDrawer from "smiles-drawer";
 import type { Metabolite, Pathway, Reaction, Selection } from "../types";
 import { explain } from "../lib/enrich";
 import { resolveSmiles } from "../lib/structure";
+import { metaFor, type Level } from "../lib/levels";
+import { asContext, enzymeFacts, metaboliteFacts } from "../lib/facts";
+import { citationsFor } from "../data/textbooks";
 
 function StructureCanvas({ smiles }: { smiles: string }) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -100,23 +103,55 @@ function MarkdownLite({ text }: { text: string }) {
   return <div>{blocks}</div>;
 }
 
-function MetaboliteView({ m }: { m: Metabolite }) {
+// Where to read this pathway in the standard texts, filtered to the books that
+// suit the current level. Pointers only — chapter numbers are edition-specific.
+function Citations({ pathway, level }: { pathway: Pathway; level: Level }) {
+  const cites = citationsFor(pathway.id, pathway.name, level);
+  if (cites.length === 0) return null;
+  return (
+    <>
+      <div style={{ ...label, marginTop: 24 }}>Read it in the books</div>
+      {cites.map((c, i) => (
+        <div key={i} style={{ marginBottom: 10 }}>
+          <div style={{ fontSize: 13, color: "#C7D2DE", fontWeight: 500 }}>
+            {c.book} <span style={{ color: "#5C6B85", fontWeight: 400 }}>{c.edition}</span>
+          </div>
+          <div style={{ fontSize: 12, color: "#7D8B9C", fontFamily: "var(--font-mono)" }}>
+            {c.chapter} — {c.title}
+          </div>
+        </div>
+      ))}
+      <div style={{ fontSize: 10, color: "#5C6B85", marginTop: 4, lineHeight: 1.5 }}>
+        Chapter numbers shift between editions — search the chapter title if it doesn't match your copy.
+      </div>
+    </>
+  );
+}
+
+function MetaboliteView({ m, level }: { m: Metabolite; level: Level }) {
   const [smiles, setSmiles] = useState(m.smiles);
   const [state, setState] = useState<"have" | "loading" | "none">(m.smiles ? "have" : "loading");
   const [fullName, setFullName] = useState("");
   const [explanation, setExplanation] = useState(m.explanation);
+  const [sources, setSources] = useState<string[]>([]);
 
   useEffect(() => {
     let cancelled = false;
     setFullName("");
     setExplanation(m.explanation);
+    setSources([]);
     setSmiles(m.smiles);
     setState(m.smiles ? "have" : "loading");
 
     (async () => {
-      // Always fetch the extensive exam-style write-up (and full name), curated
-      // or live. The full name also drives structure lookup for live metabolites.
-      const ai = await explain("metabolite", m.name, `${m.compartment ?? ""} ${m.explanation ?? ""}`.trim());
+      // Retrieve real chemical data BEFORE explaining, so the model describes
+      // what was fetched rather than what it half-remembers.
+      const facts = await metaboliteFacts({ name: m.name, entityId: m.entityId });
+      if (cancelled) return;
+      setSources(facts.sources);
+
+      const ctx = asContext(facts, `${m.compartment ?? ""} ${m.explanation ?? ""}`.trim());
+      const ai = await explain("metabolite", m.name, ctx, level);
       if (cancelled) return;
       let full = "";
       if (ai.fullName && ai.fullName.toLowerCase() !== m.name.toLowerCase()) { setFullName(ai.fullName); full = ai.fullName; }
@@ -130,7 +165,7 @@ function MetaboliteView({ m }: { m: Metabolite }) {
       }
     })();
     return () => { cancelled = true; };
-  }, [m.id, m.name, m.smiles, m.compartment, m.explanation]);
+  }, [m.id, m.name, m.smiles, m.compartment, m.explanation, m.entityId, level]);
 
   return (
     <>
@@ -155,14 +190,26 @@ function MetaboliteView({ m }: { m: Metabolite }) {
         </div>
       )}
       {explanation && <div style={{ marginTop: 18 }}><MarkdownLite text={explanation} /></div>}
+      <Provenance level={level} sources={sources} />
     </>
+  );
+}
+
+// What the notes were built from. Shown so you can tell grounded text (written
+// against retrieved data) from text the model produced unaided.
+function Provenance({ level, sources }: { level: Level; sources: string[] }) {
+  return (
+    <div style={{ fontSize: 10, color: "#5C6B85", marginTop: 10, fontFamily: "var(--font-mono)", lineHeight: 1.6 }}>
+      ✦ AI study notes · {metaFor(level).full} level
+      {sources.length > 0 && <> · grounded with {sources.join(", ")}</>}
+    </div>
   );
 }
 
 // Big-picture overview of the whole pathway PLUS a numbered walkthrough of
 // every step. The overview is AI-written server-side (cached); each step row is
 // tappable to open its full explanation.
-function PathwayOverview({ pathway, onSelect }: { pathway: Pathway; onSelect?: (s: Selection) => void }) {
+function PathwayOverview({ pathway, level, onSelect }: { pathway: Pathway; level: Level; onSelect?: (s: Selection) => void }) {
   const [text, setText] = useState("");
   const [loading, setLoading] = useState(true);
   useEffect(() => {
@@ -171,13 +218,13 @@ function PathwayOverview({ pathway, onSelect }: { pathway: Pathway; onSelect?: (
     setText("");
     const enzymes = pathway.reactions.map((r) => r.enzyme).slice(0, 20).join(", ");
     const ctx = `${pathway.subtitle}. Steps/enzymes: ${enzymes}.`;
-    explain("pathway", pathway.name, ctx).then((ai) => {
+    explain("pathway", pathway.name, ctx, level).then((ai) => {
       if (cancelled) return;
       setText(ai.explanation || "");
       setLoading(false);
     });
     return () => { cancelled = true; };
-  }, [pathway.id, pathway.name, pathway.subtitle, pathway.reactions]);
+  }, [pathway.id, pathway.name, pathway.subtitle, pathway.reactions, level]);
 
   const mName = (id: string) => pathway.metabolites.find((m) => m.id === id)?.abbr ?? id;
 
@@ -187,12 +234,14 @@ function PathwayOverview({ pathway, onSelect }: { pathway: Pathway; onSelect?: (
       <h2 style={{ margin: "0 0 4px", fontSize: 20, fontWeight: 600 }}>{pathway.name}</h2>
       <div style={{ fontSize: 12, color: "#7D8B9C", fontFamily: "var(--font-mono)", marginBottom: 16 }}>{pathway.subtitle}</div>
       {loading ? (
-        <div style={{ fontSize: 13, color: "#5C6B85" }}>Writing overview…</div>
+        <div style={{ fontSize: 13, color: "#5C6B85" }}>Writing {metaFor(level).full.toLowerCase()}-level overview…</div>
       ) : text ? (
         <MarkdownLite text={text} />
       ) : (
         <p style={{ fontSize: 13, color: "#5C6B85" }}>Overview unavailable — tap any step below.</p>
       )}
+
+      <Citations pathway={pathway} level={level} />
 
       <div style={{ ...label, marginTop: 24 }}>The steps · tap for detail</div>
       <ol style={{ listStyle: "none", margin: 0, padding: 0 }}>
@@ -224,29 +273,37 @@ function PathwayOverview({ pathway, onSelect }: { pathway: Pathway; onSelect?: (
   );
 }
 
-function ReactionView({ r, pathway }: { r: Reaction; pathway: Pathway }) {
+function ReactionView({ r, pathway, level }: { r: Reaction; pathway: Pathway; level: Level }) {
   const name = (id: string) => pathway.metabolites.find((m) => m.id === id)?.name ?? id;
   const [explanation, setExplanation] = useState(r.explanation);
   const [aiNotes, setAiNotes] = useState(false);
   const [loadingAi, setLoadingAi] = useState(true);
+  const [sources, setSources] = useState<string[]>([]);
 
-  // Always fetch the extensive exam-style write-up (curated and live alike),
-  // seeding it with whatever facts we already have.
+  // Pull the enzyme's reviewed UniProt entry first — catalytic activity,
+  // cofactors and regulation as recorded, not as recalled — then explain from it.
   useEffect(() => {
     setExplanation(r.explanation);
     setAiNotes(false);
     setLoadingAi(true);
+    setSources([]);
     let cancelled = false;
     const eq = `${r.substrates.map(name).join(" + ")} -> ${r.products.map(name).join(" + ")}`;
-    const ctx = `${eq}.${r.ec ? ` EC ${r.ec}.` : ""}${r.gene ? ` Gene ${r.gene}.` : ""}${r.compartment ? ` Compartment: ${r.compartment}.` : ""} ${r.explanation}`;
-    explain("reaction", r.enzyme, ctx).then((ai) => {
+    const local = `${eq}.${r.ec ? ` EC ${r.ec}.` : ""}${r.gene ? ` Gene ${r.gene}.` : ""}${r.compartment ? ` Compartment: ${r.compartment}.` : ""} ${r.explanation}`;
+
+    (async () => {
+      const facts = await enzymeFacts({ enzyme: r.enzyme, ec: r.ec, gene: r.gene });
+      if (cancelled) return;
+      setSources(facts.sources);
+
+      const ai = await explain("reaction", r.enzyme, asContext(facts, local), level);
       if (cancelled) return;
       if (ai.explanation) { setExplanation(ai.explanation); setAiNotes(true); }
       setLoadingAi(false);
-    });
+    })();
     return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [r.id]);
+  }, [r.id, level]);
 
   return (
     <>
@@ -280,9 +337,7 @@ function ReactionView({ r, pathway }: { r: Reaction; pathway: Pathway }) {
 
       <MarkdownLite text={explanation} />
       {loadingAi && <div style={{ fontSize: 12, color: "#5C6B85", marginTop: 6 }}>✦ expanding study notes…</div>}
-      {aiNotes && !loadingAi && (
-        <div style={{ fontSize: 10, color: "#5C6B85", marginTop: 8, fontFamily: "var(--font-mono)" }}>✦ AI study notes</div>
-      )}
+      {aiNotes && !loadingAi && <Provenance level={level} sources={sources} />}
 
       {r.references.length > 0 && (
         <>
@@ -319,25 +374,27 @@ function pill(positive: boolean): React.CSSProperties {
 export default function Inspector({
   selection,
   pathway,
+  level,
   mode = "sidebar",
   onClose,
   onSelect,
 }: {
   selection: Selection;
   pathway: Pathway;
+  level: Level;
   mode?: "sidebar" | "sheet";
   onClose?: () => void;
   onSelect?: (s: Selection) => void;
 }) {
   let body: React.ReactNode;
   if (!selection || selection.kind === "about") {
-    body = <PathwayOverview pathway={pathway} onSelect={onSelect} />;
+    body = <PathwayOverview pathway={pathway} level={level} onSelect={onSelect} />;
   } else if (selection.kind === "metabolite") {
     const m = pathway.metabolites.find((x) => x.id === selection.id);
-    body = m ? <MetaboliteView m={m} /> : null;
+    body = m ? <MetaboliteView m={m} level={level} /> : null;
   } else {
     const r = pathway.reactions.find((x) => x.id === selection.id);
-    body = r ? <ReactionView r={r} pathway={pathway} /> : null;
+    body = r ? <ReactionView r={r} pathway={pathway} level={level} /> : null;
   }
 
   if (mode === "sheet") {
